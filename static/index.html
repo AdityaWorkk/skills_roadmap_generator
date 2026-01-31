@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ AI Roadmap Generator</h1>
+        <input type="text" id="skill" placeholder="Enter Skill (e.g. FastAPI)">
+        <select id="speed">
+            <option value="crash course">Crash Course</option>
+            <option value="In-depth">In-depth</option>
+        </select>
+        <textarea id="custom" placeholder="Optional: Special requests (e.g. learn some HTML too)"></textarea>
+        <button onclick="generate()">Generate Roadmap</button>
+
+        <div id="loading" style="display:none; margin-top:20px;">
+            <p>Generating your roadmap... Please wait.</p>
+        </div>
+
+        <div id="error" style="display:none; color:red; margin-top:20px;"></div>
+
+        <div id="output" style="margin-top:20px;">
+            <!-- SVG will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        async function generate() {
+            const skill = document.getElementById('skill').value;
+            const speed = document.getElementById('speed').value;
+            const custom = document.getElementById('custom').value;
+
+            if (!skill) {
+                alert('Please enter a skill!');
+                return;
+            }
+
+            // Show loading, hide output and error
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const res = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        skill: skill,
+                        speed: speed,
+                        custom_prompt: custom,
+                        language: 'Any'
+                    })
+                });
+
+                const data = await res.json();
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.error) {
+                    // Show error
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('error').style.display = 'block';
+                } else if (data.svg) {
+                    // Display SVG directly in the output div
+                    document.getElementById('output').innerHTML = data.svg;
+                } else {
+                    document.getElementById('error').textContent = 'Unexpected response format';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = 'Network error: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        // Allow Enter key to trigger generation
+        document.getElementById('skill').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generate();
+            }
+        });
+    </script>
+</body>
+</html>
